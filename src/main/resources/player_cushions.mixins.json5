@@ -1,0 +1,16 @@
+{
+    "required": true,
+    "package": "net.lopymine.pc.mixin",
+    "refmap": "${mod_id}.refmap.json",
+    "compatibilityLevel": "JAVA_${java}",
+    "mixins": [],
+    "client": [
+	    "ScreenMixin",
+	    "CushionRendererMixin",
+	    "CushionModelMixin",
+	    "ItemStackMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

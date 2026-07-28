@@ -1,0 +1,333 @@
+package net.lopymine.pc.utils.texture;
+
+import com.mojang.blaze3d.platform.NativeImage;
+import java.io.IOException;
+import java.net.*;
+import net.fabricmc.loader.api.FabricLoader;
+import net.lopymine.pc.client.PlayerCushionsClient;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.ARGB;
+import org.jetbrains.annotations.*;
+
+public class PlayerSkinUtils {
+
+	public static void downloadSkin(@NotNull String textureUrl, @NotNull Identifier textureId, @Nullable SuccessAction onSuccessRegistration, @Nullable FailedAction onFailedRegistration, boolean skin) {
+		try {
+			NativeImage nativeImage = download(textureUrl);
+			NativeImage image = skin ? remapSkinTexture(nativeImage) : remapTextureToStandardSize(nativeImage, true);
+			NativeImage texture = makeCushionTexture(image);
+
+			Minecraft.getInstance().execute(() -> {
+				Minecraft.getInstance().getTextureManager().register(textureId, new DynamicTexture(textureId::toString, texture));
+
+				if (onSuccessRegistration != null) {
+					onSuccessRegistration.onSuccess(textureId);
+				}
+			});
+		} catch (Exception e) {
+			PlayerCushionsClient.LOGGER.error("Failed to download skin texture with id \"{}\": ", textureId, e);
+			if (onFailedRegistration != null) {
+				onFailedRegistration.onFailed(e);
+			}
+		}
+	}
+
+	private static NativeImage makeCushionTexture(NativeImage original) {
+		NativeImage nativeImage = new NativeImage(64, 64, true);
+
+		// face
+		for (int x = 0; x < 8; x++) {
+			for (int y = 0; y < 8; y++) {
+				int pixel = original.getPixel(x + 8, y + 8);
+
+				int d = 16 + x * 2;
+				int k = y * 2;
+
+				nativeImage.setPixel(d, k, pixel);
+				nativeImage.setPixel(d + 1, k, pixel);
+				nativeImage.setPixel(d, k + 1, pixel);
+				nativeImage.setPixel(d + 1, k + 1, pixel);
+			}
+		}
+
+		// back
+		for (int x = 0; x < 8; x++) {
+			for (int y = 0; y < 8; y++) {
+				int pixel = original.getPixel(x + 16, y);
+
+				int d = 32 + x * 2;
+				int k = y * 2;
+
+				nativeImage.setPixel(d, k, pixel);
+				nativeImage.setPixel(d + 1, k, pixel);
+				nativeImage.setPixel(d, k + 1, pixel);
+				nativeImage.setPixel(d + 1, k + 1, pixel);
+			}
+		}
+
+		// 1
+		for (int x = 0; x < 2; x++) {
+			for (int y = 0; y < 8; y++) {
+				int pixel = original.getPixel(x + 6, y + 8);
+
+				int d = y * 2;
+				int k = (1 - x) * 2 + 16;
+
+				nativeImage.setPixel(d, k, pixel);
+				nativeImage.setPixel(d + 1, k, pixel);
+				nativeImage.setPixel(d, k + 1, pixel);
+				nativeImage.setPixel(d + 1, k + 1, pixel);
+			}
+		}
+
+		// 2
+		for (int x = 0; x < 8; x++) {
+			for (int y = 0; y < 2; y++) {
+				int pixel = original.getPixel(x + 16, 6 + (1 - y));
+
+				int d = 16 + x * 2;
+				int k = 16 + y * 2;
+
+				nativeImage.setPixel(d, k, pixel);
+				nativeImage.setPixel(d + 1, k, pixel);
+				nativeImage.setPixel(d, k + 1, pixel);
+				nativeImage.setPixel(d + 1, k + 1, pixel);
+			}
+		}
+
+		// 3
+		for (int x = 0; x < 2; x++) {
+			for (int y = 0; y < 8; y++) {
+				int pixel = original.getPixel(x + 16, y + 8);
+
+				int d = (7 - y) * 2 + 32;
+				int k = x * 2 + 16;
+
+				nativeImage.setPixel(d,     k,     pixel);
+				nativeImage.setPixel(d + 1, k,     pixel);
+				nativeImage.setPixel(d,     k + 1, pixel);
+				nativeImage.setPixel(d + 1, k + 1, pixel);
+			}
+		}
+
+		// 4
+		for (int x = 0; x < 8; x++) {
+			for (int y = 0; y < 2; y++) {
+				int pixel = original.getPixel(x + 8, y + 6);
+
+				int d = 48 + x * 2;
+				int k = 16 + y * 2;
+
+				nativeImage.setPixel(d, k, pixel);
+				nativeImage.setPixel(d + 1, k, pixel);
+				nativeImage.setPixel(d, k + 1, pixel);
+				nativeImage.setPixel(d + 1, k + 1, pixel);
+			}
+		}
+
+		//
+		// SECOND LAYER
+		//
+
+		// face [2]
+		for (int x = 0; x < 8; x++) {
+			for (int y = 0; y < 8; y++) {
+				int pixel = original.getPixel(x + 8 + 32, y + 8);
+
+				int d = 16 + x * 2;
+				int k = 20 + y * 2;
+
+				nativeImage.setPixel(d, k, pixel);
+				nativeImage.setPixel(d + 1, k, pixel);
+				nativeImage.setPixel(d, k + 1, pixel);
+				nativeImage.setPixel(d + 1, k + 1, pixel);
+			}
+		}
+
+		// back [2]
+		for (int x = 0; x < 8; x++) {
+			for (int y = 0; y < 8; y++) {
+				int pixel = original.getPixel(x + 16 + 32, y);
+
+				int d = 32 + x * 2;
+				int k = 20 + y * 2;
+
+				nativeImage.setPixel(d, k, pixel);
+				nativeImage.setPixel(d + 1, k, pixel);
+				nativeImage.setPixel(d, k + 1, pixel);
+				nativeImage.setPixel(d + 1, k + 1, pixel);
+			}
+		}
+
+		// 1 [2]
+		for (int x = 0; x < 2; x++) {
+			for (int y = 0; y < 8; y++) {
+				int pixel = original.getPixel(x + 6 + 32, y + 8);
+
+				int d = y * 2;
+				int k = (1 - x) * 2 + 16 + 20;
+
+				nativeImage.setPixel(d, k, pixel);
+				nativeImage.setPixel(d + 1, k, pixel);
+				nativeImage.setPixel(d, k + 1, pixel);
+				nativeImage.setPixel(d + 1, k + 1, pixel);
+			}
+		}
+
+		// 2 [2]
+		for (int x = 0; x < 8; x++) {
+			for (int y = 0; y < 2; y++) {
+				int pixel = original.getPixel(x + 16 + 32, 6 + (1 - y));
+
+				int d = 16 + x * 2;
+				int k = 20 + 16 + y * 2;
+
+				nativeImage.setPixel(d, k, pixel);
+				nativeImage.setPixel(d + 1, k, pixel);
+				nativeImage.setPixel(d, k + 1, pixel);
+				nativeImage.setPixel(d + 1, k + 1, pixel);
+			}
+		}
+
+		// 3 [2]
+		for (int x = 0; x < 2; x++) {
+			for (int y = 0; y < 8; y++) {
+				int pixel = original.getPixel(x + 16 + 32, y + 8);
+
+				int d = (7 - y) * 2 + 32;
+				int k = x * 2 + 16 + 20;
+
+				nativeImage.setPixel(d,     k,     pixel);
+				nativeImage.setPixel(d + 1, k,     pixel);
+				nativeImage.setPixel(d,     k + 1, pixel);
+				nativeImage.setPixel(d + 1, k + 1, pixel);
+			}
+		}
+
+		// 4 [2]
+		for (int x = 0; x < 8; x++) {
+			for (int y = 0; y < 2; y++) {
+				int pixel = original.getPixel(x + 8 + 32, y + 6);
+
+				int d = 48 + x * 2;
+				int k = 20 + 16 + y * 2;
+
+				nativeImage.setPixel(d, k, pixel);
+				nativeImage.setPixel(d + 1, k, pixel);
+				nativeImage.setPixel(d, k + 1, pixel);
+				nativeImage.setPixel(d + 1, k + 1, pixel);
+			}
+		}
+
+		original.close();
+
+		try {
+			nativeImage.writeToFile(FabricLoader.getInstance().getConfigDir().resolve("test.png"));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return nativeImage;
+	}
+
+	public static NativeImage download(String uri) throws IOException {
+		HttpURLConnection connection = null;
+		PlayerCushionsClient.LOGGER.debug("Downloading HTTP texture from {}", uri);
+		URI currentUri = URI.create(uri);
+
+		NativeImage image;
+		try {
+			connection = (HttpURLConnection) currentUri.toURL().openConnection(Minecraft.getInstance().getProxy());
+			connection.setDoInput(true);
+			connection.setDoOutput(false);
+			connection.connect();
+			int i = connection.getResponseCode();
+			if (i / 100 != 2) {
+				String url = String.valueOf(currentUri);
+				throw new IOException("Failed to open " + url + ", HTTP error code: " + i);
+			}
+
+			image = NativeImage.read(connection.getInputStream().readAllBytes());
+		} finally {
+			if (connection != null) {
+				connection.disconnect();
+			}
+
+		}
+		return image;
+	}
+
+	public static @NotNull NativeImage remapTextureToStandardSize(NativeImage image, boolean closeOriginal) {
+		if (image.getWidth() == 64 && image.getHeight() == 64) {
+			return image;
+		}
+		NativeImage nativeImage = new NativeImage(64, 64, true);
+		nativeImage.copyFrom(image);
+		if (closeOriginal) {
+			image.close();
+		}
+		return nativeImage;
+	}
+
+	public static NativeImage remapSkinTexture(NativeImage image) {
+		int i = image.getHeight();
+		boolean bl = i == 32;
+		if (bl) {
+			NativeImage nativeImage = new NativeImage(64, 64, true);
+			nativeImage.copyFrom(image);
+			image.close();
+			image = nativeImage;
+			nativeImage.fillRect(0, 32, 64, 32, 0);
+			nativeImage.copyRect(4, 16, 16, 32, 4, 4, true, false);
+			nativeImage.copyRect(8, 16, 16, 32, 4, 4, true, false);
+			nativeImage.copyRect(0, 20, 24, 32, 4, 12, true, false);
+			nativeImage.copyRect(4, 20, 16, 32, 4, 12, true, false);
+			nativeImage.copyRect(8, 20, 8, 32, 4, 12, true, false);
+			nativeImage.copyRect(12, 20, 16, 32, 4, 12, true, false);
+			nativeImage.copyRect(44, 16, -8, 32, 4, 4, true, false);
+			nativeImage.copyRect(48, 16, -8, 32, 4, 4, true, false);
+			nativeImage.copyRect(40, 20, 0, 32, 4, 12, true, false);
+			nativeImage.copyRect(44, 20, -8, 32, 4, 12, true, false);
+			nativeImage.copyRect(48, 20, -16, 32, 4, 12, true, false);
+			nativeImage.copyRect(52, 20, -8, 32, 4, 12, true, false);
+		}
+
+		stripAlpha(image, 0, 0, 32, 16);
+		if (bl) {
+			stripColor(image, 32, 0, 64, 32);
+		}
+
+		stripAlpha(image, 0, 16, 64, 32);
+		stripAlpha(image, 16, 48, 48, 64);
+		return image;
+	}
+
+	@SuppressWarnings("all")
+	private static void stripColor(NativeImage image, int x1, int y1, int x2, int y2) {
+		for (int i = x1; i < x2; ++i) {
+			for (int j = y1; j < y2; ++j) {
+				int k = image.getPixel(i, j);
+				if (ARGB.alpha(k) < 128) {
+					return;
+				}
+			}
+		}
+
+		for (int i = x1; i < x2; ++i) {
+			for (int j = y1; j < y2; ++j) {
+				image.setPixel(i, j, image.getPixel(i, j) & 16777215);
+			}
+		}
+	}
+
+	@SuppressWarnings("all")
+	private static void stripAlpha(NativeImage image, int x1, int y1, int x2, int y2) {
+		for (int i = x1; i < x2; ++i) {
+			for (int j = y1; j < y2; ++j) {
+				image.setPixel(i, j, ARGB.opaque(image.getPixel(i, j)));
+			}
+		}
+	}
+}
